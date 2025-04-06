@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Diagnostics Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #f8961e;
+            --danger: #f72585;
+            --gray: #6c757d;
+            --card-bg: #ffffff;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7ff;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .button-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            transition: border 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        .dns-form {
+            display: flex;
+            gap: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .dns-form .form-control {
+            flex: 1;
+        }
+
+        .output-container {
+            position: relative;
+        }
+
+        #output {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            border: 1px solid #e0e0e0;
+            color: #333;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .output-title {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(67, 97, 238, 0.2);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .export-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .timestamp {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .button-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Custom scrollbar */
+        #output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #output::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        #output::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        #output::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Network Diagnostics Tool</h1>
+            <p class="subtitle">Comprehensive network analysis and troubleshooting utility</p>
+        </header>
+
+        <div class="card">
+            <div class="button-panel">
+                <button class="btn btn-primary" onclick="runSpeedTest()">
+                    <i class="fas fa-tachometer-alt"></i> Test Network Speed
+                </button>
+                <button class="btn btn-primary" onclick="fetchData('/systeminfo')">
+                    <i class="fas fa-info-circle"></i> System Info
+                </button>
+                <button class="btn btn-primary" onclick="fetchData('/devices')">
+                    <i class="fas fa-network-wired"></i> Network Devices
+                </button>
+                <div class="dns-form">
+                    <input type="text" id="host" class="form-control" placeholder="Enter domain or IP address..." required>
+                    <button class="btn btn-success" type="button" onclick="resolveDNS()">
+                        <i class="fas fa-search"></i> DNS Resolve
+                    </button>
+                </div>
+                <button class="btn btn-warning" onclick="fetchData('/history')">
+                    <i class="fas fa-history"></i> Speed Test History
+                </button>
+            </div>
+        </div>
+
+        <div class="card output-container">
+            <div class="output-header">
+                <div class="output-title">Diagnostics Output</div>
+                <div class="timestamp" id="timestamp"></div>
+            </div>
+            <div class="spinner" id="spinner"></div>
+            <pre id="output">Welcome to the Network Diagnostics Tool!
+Select an option above to begin analysis.</pre>
+        </div>
+
+        <div class="export-buttons">
+            <button class="btn btn-outline" onclick="exportToPDF()">
+                <i class="fas fa-file-pdf"></i> Export to PDF
+            </button>
+            <button class="btn btn-outline" onclick="exportToCSV()">
+                <i class="fas fa-file-csv"></i> Export to CSV
+            </button>
+            <button class="btn btn-outline" onclick="clearOutput()">
+                <i class="fas fa-trash-alt"></i> Clear Output
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('timestamp').textContent = now.toLocaleString();
+        }
+
+        function showSpinner(show) {
+            const spinner = document.getElementById("spinner");
+            spinner.style.display = show ? "block" : "none";
+        }
+
+        function formatAsText(data) {
+            updateTimestamp();
+            
+            if (typeof data !== 'object') return data;
+
+            // Special formatting for DNS resolution (array of strings)
+            if (Array.isArray(data) && typeof data[0] === "string") {
+                return "DNS Resolution Results:\n" + 
+                       "=======================\n" + 
+                       data.map(ip => `• ${ip}`).join("\n");
+            }
+
+            // Array of objects (history or devices)
+            if (Array.isArray(data)) {
+                let text = "";
+                data.forEach((item, index) => {
+                    text += `Entry #${index + 1}\n${'='.repeat(20)}\n`;
+                    for (let key in item) {
+                        text += `  ${key.padEnd(20)}: ${item[key]}\n`;
+                    }
+                    text += "\n";
+                });
+                return text;
+            }
+
+            // Single object (system info, speed test)
+            let text = "";
+            for (let key in data) {
+                text += `${key.padEnd(25)}: ${data[key]}\n`;
+            }
+            return text;
+        }
+
+        function fetchData(url) {
+            const output = document.getElementById("output");
+            output.textContent = `Fetching data from ${url}...\nPlease wait...`;
+            showSpinner(true);
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    showSpinner(false);
+                    output.textContent = formatAsText(data);
+                })
+                .catch(err => {
+                    showSpinner(false);
+                    output.textContent = `Error fetching data:\n${err.message || err}`;
+                });
+        }
+
+        function resolveDNS() {
+            const host = document.getElementById("host").value.trim();
+            if (!host) {
+                alert("Please enter a domain or IP address");
+                return;
+            }
+
+            const output = document.getElementById("output");
+            output.textContent = `Resolving DNS for "${host}"...\nThis may take a moment.`;
+            showSpinner(true);
+
+            fetch('/dns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `host=${encodeURIComponent(host)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                showSpinner(false);
+                output.textContent = formatAsText(data);
+            })
+            .catch(err => {
+                showSpinner(false);
+                output.textContent = `DNS Resolution Error:\n${err.message || err}`;
+            });
+        }
+
+        function runSpeedTest() {
+            const output = document.getElementById("output");
+            output.textContent = "Running network speed test...\nThis may take up to 30 seconds.";
+            showSpinner(true);
+
+            fetch("/speedtest")
+                .then(res => res.json())
+                .then(data => {
+                    showSpinner(false);
+                    output.textContent = formatAsText(data);
+                })
+                .catch(err => {
+                    showSpinner(false);
+                    output.textContent = `Speed Test Error:\n${err.message || err}`;
+                });
+        }
+
+        function exportToPDF() {
+            const text = document.getElementById("output").textContent;
+            const win = window.open('', '', 'height=700,width=900');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Network Diagnostics Report</title>
+                    <style>
+                        body { font-family: Arial; padding: 20px; }
+                        pre { white-space: pre-wrap; font-size: 14px; }
+                        h1 { color: #4361ee; }
+                        .header { display: flex; justify-content: space-between; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Network Diagnostics Report</h1>
+                        <div>${new Date().toLocaleString()}</div>
+                    </div>
+                    <hr>
+                    <pre>${text}</pre>
+                </body>
+                </html>
+            `);
+            win.document.close();
+            win.print();
+        }
+
+        function exportToCSV() {
+            const text = document.getElementById("output").textContent;
+            const lines = text.split('\n').filter(line => line.trim() !== "");
+            let csv = "Parameter,Value\n";
+
+            lines.forEach(line => {
+                const parts = line.split(":");
+                if (parts.length >= 2) {
+                    const key = parts[0].trim().replace(/"/g, '""');
+                    const value = parts.slice(1).join(":").trim().replace(/"/g, '""');
+                    csv += `"${key}","${value}"\n`;
+                } else if (line.trim()) {
+                    // Handle non-key-value lines (like section headers)
+                    csv += `"${line.trim().replace(/"/g, '""')}",""\n`;
+                }
+            });
+
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = `network_report_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
+        }
+
+        function clearOutput() {
+            if (confirm("Are you sure you want to clear the output?")) {
+                document.getElementById("output").textContent = "Output cleared.\nSelect an option to perform diagnostics.";
+                updateTimestamp();
+            }
+        }
+
+        // Initialize timestamp
+        updateTimestamp();
+    </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+flask
+psutil
+requests
+dnspython
+speedtest-cli
+scapy
+pandas         # for CSV export
+reportlab      # for generating PDFs (or use WeasyPrint or FPDF instead)
